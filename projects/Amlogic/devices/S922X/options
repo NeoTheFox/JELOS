@@ -130,6 +130,12 @@
   # mediacenter also automount internally drives at boottime via udev (yes / no)
     UDEVIL="yes"
 
+  # filesystem used for /storage (ext4 / f2fs)
+    STORAGE_FS="ext4"
+
+  # build and install F2FS support (yes / no)
+    F2FS="yes"
+
   # build and install exFAT fuse support (yes / no)
     EXFAT="yes"
 

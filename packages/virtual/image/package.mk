@@ -69,6 +69,9 @@ fi
 # Automounter support
 [ "${UDEVIL}" = "yes" ] && PKG_DEPENDS_TARGET+=" udevil"
 
+# F2FS support
+[ "${F2FS}" = "yes" ] && PKG_DEPENDS_TARGET+=" f2fs-tools"
+
 # EXFAT support
 [ "${EXFAT}" = "yes" ] && PKG_DEPENDS_TARGET+=" exfat exfatprogs"
 
