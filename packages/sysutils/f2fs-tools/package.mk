@@ -26,7 +26,7 @@ pre_configure() {
   autoreconf -fi
 }
 
-post_makeinstall_target() {
+post_makeinstall() {
   rm -rf ${INSTALL}/usr/sbin/mklost+found
   rm -rf ${INSTALL}/usr/sbin/sg_write_buffer
   rm -rf ${INSTALL}/home
