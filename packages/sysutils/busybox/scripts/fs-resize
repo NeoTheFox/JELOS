@@ -21,7 +21,7 @@ if [ -e /storage/.please_resize_me ] ; then
   fi
 
   # get the disk. /storage on 2nd partition
-  PART=$(blkid | awk 'BEGIN {FS=":"} /'$(cat /proc/cmdline | sed -e 's#^.*disk=UUID=##g' -e 's#\ .*$##g')'/ {print $1}')
+  PART=$(blkid | awk 'BEGIN {FS=":"} /'$(cat /proc/cmdline | sed -e 's#^.*disk=UUID=##g' -e 's#^.*disk=PARTUUID=##g' -e 's#\ .*$##g')'/ {print $1}')
   if [ "$(echo ${PART} | awk '/mmcblk/ {print $1}')" ]
   then
     DISK=$(echo ${PART} | sed s/p[0-9]//g)
@@ -52,9 +52,17 @@ if [ -e /storage/.please_resize_me ] ; then
       StartProgress spinner "Checking layout...      " "parted -fs ${DISK} print &>/dev/null"
     fi
 
+    # differnet utilities for different filesystems
+    STORAGE_FS=$(blkid -s TYPE -o value ${DISK})
+
     StartProgress spinner "Resizing storage partition...   " "parted -s -a optimal -m ${DISK} resizepart ${PARTNUM} 100% &>/dev/null"
-    StartProgress spinner "Checking storage file system... " "e2fsck -f -p ${PART} &>/dev/null"
-    StartProgress spinner "Resizing storage file system... " "resize2fs ${PART} &>/dev/null"
+    if [ ${STORAGE_FS} = "ext4" ]; then
+        StartProgress spinner "Checking storage file system... " "e2fsck -f -p ${PART} &>/dev/null"
+        StartProgress spinner "Resizing storage file system... " "resize2fs ${PART} &>/dev/null"
+    elif [ ${STORAGE_FS} = "f2fs" ]; then
+        StartProgress spinner "Checking storage file system... " "fsck.f2fs -a -f ${PART} &>/dev/null"
+        StartProgress spinner "Resizing storage file system... " "resize.f2fs ${PART} &>/dev/null"
+    fi
     StartProgress countdown "Rebooting in 5s...     " 5 "NOW"
   fi
 fi
