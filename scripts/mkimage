@@ -255,6 +255,10 @@ STORAGE_PART_COUNT=$(( ${STORAGE_PART_END} - ${STORAGE_PART_START} + 1 ))
 sync
 dd if="${DISK}" of="${LE_TMP}/part2.${STORAGE_FS}" bs=512 skip="${STORAGE_PART_START}" count="${STORAGE_PART_COUNT}" conv=fsync >"${SAVE_ERROR}" 2>&1 || show_error
 
+# populate storage fs
+mkdir "${LE_TMP}/part2.fs"
+touch "${LE_TMP}/part2.fs/.please_resize_me"
+
 # create filesystem on part2
 echo "image: creating filesystem on part2..."
 if [ "${STORAGE_FS}" = "ext4" ]; then
@@ -262,20 +266,29 @@ if [ "${STORAGE_FS}" = "ext4" ]; then
   tune2fs -L "${DISTRO_DISKLABEL}" -U ${UUID_STORAGE} "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
   e2fsck -n "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
 elif [ "${STORAGE_FS}" = "f2fs" ]; then
-  mkfs.f2fs -q -O extra_attr,compression -l "${DISTRO_DISKLABEL}" "${LE_TMP}/part2.${STORAGE_FS}"
-  fsck.f2fs -a -f "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
+  cat << EOF > "${LE_TMP}/storage.cfg"
+image part2.${STORAGE_FS} {
+  f2fs {
+    label = "${DISTRO_DISKLABEL}"
+    extraargs = "-O extra_attr,compression"
+  }
+  size = ${STORAGE_SIZE}M
+}
+config {
+  outputpath = "${LE_TMP}"
+}
+EOF
+  genimage --config "${LE_TMP}/storage.cfg" --tmppath ${LE_TMP}/genimage_tmp --root "${LE_TMP}/part2.fs"
 fi
 sync
 
-# add resize mark
-mkdir "${LE_TMP}/part2.fs"
-touch "${LE_TMP}/part2.fs/.please_resize_me"
 echo "image: populating filesystem on part2..."
-populatefs -U -d "${LE_TMP}/part2.fs" "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
-sync
 if [ "${STORAGE_FS}" = "ext4" ]; then
+    populatefs -U -d "${LE_TMP}/part2.fs" "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
+    sync
     e2fsck -n "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
 elif [ "${STORAGE_FS}" = "f2fs" ]; then
+    # f2fs gets populated by genimage...
     fsck.f2fs -a -f "${LE_TMP}/part2.${STORAGE_FS}" >"${SAVE_ERROR}" 2>&1 || show_error
 fi
 sync
