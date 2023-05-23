@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2009-2016 Stephan Raue (stephan@openelec.tv)
@@ -55,7 +55,7 @@ show_error() {
 
 # using UUID for MBR and PARTUUID for gpt
 format_uuid() {
-  if [ "${PARTITION_TABLE}" = "mbr" ]; then
+  if [ "${PARTITION_TABLE}" = "msdos" ]; then
     echo "UUID=${1}"
   else
     echo "PARTUUID=${1}"
@@ -69,10 +69,10 @@ trap cleanup SIGINT
 echo -e "\nimage: creating file $(basename ${DISK})..."
 dd if=/dev/zero of="${DISK}" bs=1M count="${DISK_SIZE}" conv=fsync >"${SAVE_ERROR}" 2>&1 || show_error
 
-if [ "${STORAGE_FS}" = "f2fs" ] && [ "${PARTITION_TABLE}" == "mbr" ]
+if [ "${STORAGE_FS}" = "f2fs" ] && [ "${PARTITION_TABLE}" = "msdos" ]
 then
-    echo "Can't use F2FS with MBR! Falling back to ext4..."
-    STORAGE_FS="ext4"
+    echo "Can't use F2FS with MBR!"
+    exit 1
 fi
 
 echo "image: creating partition table (${PARTITION_TABLE})..."

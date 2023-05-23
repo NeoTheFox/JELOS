@@ -113,6 +113,7 @@ break_after() {
 # $1:target, $2:mountpoint, $3:mount options, [$4:fs type]
 mount_common() {
   # Common mount handler, handles block devices and filesystem images
+  echo "Target: $1\n Mountpoint: $2\n Mount options: $3\n FS: $4" >/dev/console
   MOUNT_OPTIONS="-o $3"
   [ -n "$4" ] && MOUNT_OPTIONS="-t $4 ${MOUNT_OPTIONS}"
 
@@ -126,7 +127,7 @@ mount_common() {
   done
   [ "${ERR_ENV}" -eq "0" ] && return 0
   echo "Unable to find $1, powering off and on should correct it." >/dev/console
-  StartProgress countdown "Power off in 3s... " 3 "NOW"
+  StartProgress countdown "Power off in 3s... " 15 "NOW"
   poweroff
 }
 
@@ -246,7 +247,7 @@ mount_part() {
       MOUNT_TARGET="$1"
       RUN_FSCK="no"
       ;;
-    LABEL=*|UUID=*|/*)
+    LABEL=*|UUID=*|PARTUUID=*|/*)
       MOUNT_CMD="mount_common"
       MOUNT_TARGET="$1"
       ;;
@@ -1045,7 +1046,7 @@ for arg in $(cat /proc/cmdline); do
           UPDATE_DISABLED=yes
           FLASH_NETBOOT=yes
           ;;
-        /dev/*|LABEL=*|UUID=*)
+        /dev/*|LABEL=*|UUID=*|PARTUUID=*)
           RUN_FSCK_DISKS="${RUN_FSCK_DISKS} $boot"
           ;;
         FOLDER=*)
@@ -1059,7 +1060,7 @@ for arg in $(cat /proc/cmdline); do
         ISCSI=*|NBD=*|NFS=*)
           STORAGE_NETBOOT=yes
           ;;
-        /dev/*|LABEL=*|UUID=*)
+        /dev/*|LABEL=*|UUID=*|PARTUUID=*)
           RUN_FSCK_DISKS="${RUN_FSCK_DISKS} $disk"
           ;;
         FOLDER=*)
